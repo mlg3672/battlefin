@@ -185,6 +185,28 @@ accuracy(prpart, testing$close)[2] # rpart 1.6813
 accuracy(pgbm, testing$close)[2] # gbm 0.5404689
 accuracy(prf, testing$close)[2] #rf 0.5432
 accuracy(predictions, testing$close)[2] #glm 0.27012
+
+inRange<-function(p,x,t=0.1) { sum((x+t>=p)*(x-t<=p))/length(p)}
+inRange(prpart, testing$close) #rpart 0.167
+inRange(pgbm, testing$close)#gbm 0.271
+inRange(prf, testing$close) #rf 0.354
+inRange(predictions, testing$close) #glm 0.416
+
+# ensemble models ----
+eavg<-rowMeans(submission[,-1])
+emed<-apply(submission[,-1],1,median)
+weights<-matrix(data=rep(c(0.1,0.2,0.3,0.4),198),nrow=198,ncol=4,byrow=T)
+ewei<-rowSums(weights*submission[,-1])
+
+#-- compare ensemble models ---
+accuracy(eavg, testing$close)[2] # avg 0.6381175
+accuracy(emed, testing$close)[2] # median 0.4787952
+accuracy(ewei, testing$close)[2] #weighted 0.992659
+
+inRange(eavg, testing$close) #avg  0.29167
+inRange(emed, testing$close)#median 0.375
+inRange(ewei, testing$close) #weighted 0.167
+
 #--- make sample output file  -----
 x <- paste0("0",c(1:198))
 x11<-data.frame(matrix(NA, nrow = 1, ncol = 198)) #empty dataframe
@@ -210,7 +232,7 @@ qplot(stock,value,data=x14,colour=variable,ylab="percent change in price")
 # write submission file ----
 fileId <- 35
 submission <-data.frame(FileId=rep(fileId,48),rf=prf,gbm=pgbm,glm=predictions,rpart=prpart)
-nameFile<-paste0("data/",fileId,"_submission.csv")
+nameFile<-paste0("results/",fileId,"_submission.csv")
 write.csv(submission, file =nameFile, row.names=FALSE)
 #  read sample submission file ----
 sampleSubmit<-read.csv("sampleSubmission.csv")
